@@ -2,6 +2,8 @@
 
 Small, fun and useful mods for [Claude Code](https://claude.com/claude-code). Each one is a single command away.
 
+![terminal-pet yawning in the empty prompt box, usage-band on the hint line below](assets/cat-and-usage.png)
+
 | Mod | What it does |
 |---|---|
 | [terminal-pet](#terminal-pet) | A cat in the empty prompt box that reacts to your day, plus `/pet-stats` silly stats |
