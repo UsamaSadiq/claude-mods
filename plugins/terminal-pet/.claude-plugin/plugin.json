@@ -1,0 +1,19 @@
+{
+  "name": "terminal-pet",
+  "version": "1.0.0",
+  "description": "A cat in the empty prompt box that reacts to your day, plus /pet-stats silly stats",
+  "author": { "name": "Usama Sadiq", "url": "https://github.com/UsamaSadiq" },
+  "homepage": "https://github.com/UsamaSadiq/claude-mods",
+  "repository": "https://github.com/UsamaSadiq/claude-mods",
+  "license": "MIT",
+  "keywords": ["pet", "cat", "fun", "stats"],
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "reportHour": {
+      "type": "number",
+      "title": "Daily report hour",
+      "description": "Local hour (0-23) after which the day's silly stats pop up once. Set -1 to turn the pop-up off.",
+      "default": 18
+    }
+  }
+}
