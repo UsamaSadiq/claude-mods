@@ -1,0 +1,11 @@
+{
+  "name": "usage-band",
+  "version": "1.0.0",
+  "description": "Session and weekly plan usage on the prompt hint line",
+  "author": { "name": "Usama Sadiq", "url": "https://github.com/UsamaSadiq" },
+  "homepage": "https://github.com/UsamaSadiq/claude-mods",
+  "repository": "https://github.com/UsamaSadiq/claude-mods",
+  "license": "MIT",
+  "keywords": ["usage", "rate-limits", "status"],
+  "types": "./types/index.d.ts"
+}
