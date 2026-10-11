@@ -1,0 +1,19 @@
+{
+  "name": "render-md",
+  "version": "1.0.0",
+  "description": "Renders the Markdown files Claude edits in a side pane, plus /render-md <file> to open any Markdown file",
+  "author": { "name": "Usama Sadiq", "url": "https://github.com/UsamaSadiq" },
+  "homepage": "https://github.com/UsamaSadiq/claude-mods",
+  "repository": "https://github.com/UsamaSadiq/claude-mods",
+  "license": "MIT",
+  "keywords": ["markdown", "preview", "pane"],
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "autoOpen": {
+      "type": "boolean",
+      "title": "Open on edit",
+      "description": "Open the pane by itself whenever Claude writes or edits a Markdown file.",
+      "default": true
+    }
+  }
+}
