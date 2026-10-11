@@ -1,7 +1,7 @@
 {
   "name": "terminal-pet",
-  "version": "1.1.1",
-  "description": "A cat in the empty prompt box that reacts to your day, with next-step suggestions beside it and /pet-stats silly stats",
+  "version": "1.1.2",
+  "description": "A cat in the empty prompt box that reacts to your day, plus /pet-stats silly stats",
   "author": { "name": "Usama Sadiq", "url": "https://github.com/UsamaSadiq" },
   "homepage": "https://github.com/UsamaSadiq/claude-mods",
   "repository": "https://github.com/UsamaSadiq/claude-mods",
@@ -14,18 +14,6 @@
       "title": "Daily report hour",
       "description": "Local hour (0-23) after which the day's silly stats pop up once. Set -1 to turn the pop-up off.",
       "default": 18
-    },
-    "nextSteps": {
-      "type": "boolean",
-      "title": "Next-step suggestions",
-      "description": "After each answer, show up to 3 short follow-up prompts above the box, written by a small model call.",
-      "default": true
-    },
-    "stepCount": {
-      "type": "number",
-      "title": "How many suggestions",
-      "description": "1 to 3.",
-      "default": 3
     }
   }
 }

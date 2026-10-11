@@ -6,7 +6,7 @@ Small, fun and useful mods for [Claude Code](https://claude.com/claude-code). Ea
 
 | Mod | What it does |
 |---|---|
-| [terminal-pet](#terminal-pet) | A cat in the empty prompt box that reacts to your day, with next-step suggestions beside it, plus `/pet-stats` silly stats |
+| [terminal-pet](#terminal-pet) | A cat in the empty prompt box that reacts to your day, plus `/pet-stats` silly stats |
 | [usage-band](#usage-band) | Your session and weekly plan usage as gauges in a bar above the prompt |
 | [ringtones](#ringtones) | Short synthesized chimes for finished turns, blocked calls, failures and shipping |
 | [cross-fire](#cross-fire) | Holds destructive shell commands for your confirmation and says what they would hit |
@@ -63,8 +63,6 @@ The first matching row wins. Times are your machine's local time.
 
 Accepting the suggestion sends only the suggestion. If you accidentally submit the cat alone, it's dropped and nothing is sent.
 
-**Next steps.** After each answer, up to three short follow-up prompts appear in a band above the box, with the cat still in the box. Click one, or press ctrl+x then Tab to focus the band and then `1`, `2` or `3`, to put it in the box, then edit it or press Enter. They are written by a small model call (`haiku`), dropped when you type, and skipped after an interrupted or failed turn. Turn them off with the `nextSteps` setting.
-
 **Silly stats.** Type `/pet-stats` for today's numbers across all your sessions:
 
 ```
@@ -85,8 +83,6 @@ The same report pops up once a day after the report hour.
 | Setting | Default | Meaning |
 |---|---|---|
 | `reportHour` | `18` | Local hour after which the daily report pops up once. `-1` turns it off. |
-| `nextSteps` | `true` | Show follow-up suggestions above the box after each answer. |
-| `stepCount` | `3` | How many suggestions, 1 to 3. |
 
 ## usage-band
 
@@ -96,7 +92,7 @@ Draws your plan usage as a bar above the prompt, with time left until each windo
 Session ▰▱▱▱▱▱▱▱ 12% · 4h 2m   Weekly ▰▰▰▱▱▱▱▱ 43% · 4d 21h
 ```
 
-Each gauge has eight cells and turns yellow from 70% and red from 90%. It refreshes every minute, and straight away whenever Claude Code reports new rate-limit figures. Until the first reading arrives it shows `Usage: waiting for the first reading`. It steps aside for a survey, and it stacks with terminal-pet's next-step suggestions rather than replacing them.
+Each gauge has eight cells and turns yellow from 70% and red from 90%. It refreshes every minute, and straight away whenever Claude Code reports new rate-limit figures. Until the first reading arrives it shows `Usage: waiting for the first reading`. It steps aside for a survey, and it stacks above or below any other band instead of replacing it.
 
 ## ringtones
 
@@ -180,7 +176,7 @@ A pane opened by an edit needs a terminal at least 144 columns wide, and below t
 
 ## Using them together
 
-Both mods are built to share the screen. usage-band and terminal-pet's next steps both draw above the prompt and stack in one column, and terminal-pet uses the prompt box, so neither overwrites the other.
+Both mods are built to share the screen. usage-band draws above the prompt and terminal-pet uses the prompt box, so neither overwrites the other.
 
 ## Developing
 

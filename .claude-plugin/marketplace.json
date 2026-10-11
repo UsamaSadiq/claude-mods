@@ -11,7 +11,7 @@
     {
       "name": "terminal-pet",
       "source": "./plugins/terminal-pet",
-      "description": "A cat in the empty prompt box that reacts to your day, with next-step suggestions beside it and /pet-stats silly stats"
+      "description": "A cat in the empty prompt box that reacts to your day, with /pet-stats silly stats"
     },
     {
       "name": "usage-band",
