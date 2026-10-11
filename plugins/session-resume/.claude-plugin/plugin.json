@@ -1,0 +1,31 @@
+{
+  "name": "session-resume",
+  "version": "1.0.0",
+  "description": "Picks the session back up with \"continue\" when a rate-limit window resets after a limit stopped your turn",
+  "author": { "name": "Usama Sadiq", "url": "https://github.com/UsamaSadiq" },
+  "homepage": "https://github.com/UsamaSadiq/claude-mods",
+  "repository": "https://github.com/UsamaSadiq/claude-mods",
+  "license": "MIT",
+  "keywords": ["rate-limits", "automation", "productivity"],
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "message": {
+      "type": "string",
+      "title": "Resume message",
+      "description": "The prompt sent when the limit resets.",
+      "default": "continue"
+    },
+    "bufferSeconds": {
+      "type": "number",
+      "title": "Wait after reset",
+      "description": "Seconds to wait past the reset time before resuming.",
+      "default": 45
+    },
+    "maxWaitHours": {
+      "type": "number",
+      "title": "Longest wait",
+      "description": "Windows that reset later than this (a weekly limit, say) are not waited for.",
+      "default": 6
+    }
+  }
+}
