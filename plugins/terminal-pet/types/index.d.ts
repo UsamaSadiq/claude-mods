@@ -24,6 +24,7 @@ declare module 'claude-code' {
       moments: Moments
       suggestion: string
       shownFace: string
+      steps: string[]
     }
   }
 }

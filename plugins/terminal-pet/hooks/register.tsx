@@ -6,6 +6,8 @@ import { afterPrompt, faceOf, levelOf, moodOf, withoutPet, withPet } from './pet
 import { report, reportLines } from './report'
 import { addCounters, countPrompt, countTool, countTurn, emptyCounters, isEmpty, sumCounters, toolKind, xpOf } from './stats'
 import type { ToolOutcome } from './stats'
+import { parseSteps, settingsOf as stepSettingsOf, stepsPrompt } from './steps'
+import type { Line, Settings as StepSettings } from './steps'
 import { localDate, localHour } from './time'
 
 const TICK_MS = 60_000
@@ -23,6 +25,7 @@ const pastXp = atom({ plugin: 'terminal-pet', key: 'pastXp' } as const, 0)
 const moments = atom({ plugin: 'terminal-pet', key: 'moments' } as const, NO_MOMENTS)
 const suggestion = atom({ plugin: 'terminal-pet', key: 'suggestion' } as const, '')
 const shownFace = atom({ plugin: 'terminal-pet', key: 'shownFace' } as const, '')
+const steps = atom({ plugin: 'terminal-pet', key: 'steps' } as const, [] as string[])
 
 type DayRecord = Record<string, Counters>
 
@@ -115,6 +118,33 @@ const tick = async ($: EngineInterface, reportHour: number) => {
   await showPetIfMoodChanged($)
 }
 
+const STEPS_MODEL = 'haiku'
+const STEPS_MAX_TOKENS = 120
+const STEPS_TIMEOUT_MS = 15_000
+const RECENT_MESSAGES = 6
+
+const recentLines = async ($: EngineInterface): Promise<Line[]> => {
+  const messages = await $.session.messages()
+  if (!Array.isArray(messages)) return []
+  return messages.slice(-RECENT_MESSAGES).map(({ role, text }) => ({ role, text }))
+}
+
+const suggestSteps = async ($: EngineInterface, settings: StepSettings) => {
+  const promptedBefore = (await read($, moments)).lastPrompt
+  const prompt = stepsPrompt(await recentLines($), settings.count)
+  if (prompt === undefined) return
+  const reply = await $.model.complete({ model: STEPS_MODEL, prompt, maxTokens: STEPS_MAX_TOKENS, effort: 'low', timeoutMs: STEPS_TIMEOUT_MS })
+  if (!reply.isAnswered) return
+  const promptedAfter = (await read($, moments)).lastPrompt
+  if (promptedAfter !== promptedBefore) return
+  await update($, steps, () => parseSteps(reply.text, settings.count))
+}
+
+const takeStep = async ($: EngineInterface, step: string) => {
+  await update($, steps, () => [])
+  await $.prompt.fill({ text: step, mode: 'replace' })
+}
+
 const outcomeOf = (result: ToolCallResult): ToolOutcome => {
   if ('deny' in result && result.deny !== undefined) return 'denied'
   return result.isError ? 'failed' : 'ok'
@@ -128,6 +158,7 @@ const inBackground = (run: Promise<unknown>): void => void run.catch(skipFailedR
 
 export const register: Register = (on, options) => {
   const reportHour = Number(options.reportHour ?? DEFAULT_REPORT_HOUR)
+  const stepSettings = stepSettingsOf(options)
 
   on('session.start', async ($, e, next) => {
     const started = await next(e)
@@ -160,7 +191,7 @@ export const register: Register = (on, options) => {
   on('prompt.submit', async ($, e, next) => {
     const text = withoutPet(e.text)
     if (text !== e.text && text.trim() === '') return { drop: `${await currentFace($)} is just your pet, not a prompt` }
-    await update($, suggestion, () => '')
+    await Promise.all([update($, suggestion, () => ''), update($, steps, () => [])])
     if (e.origin.kind !== 'composer') return next({ ...e, text })
     const clock = await $.clock.now()
     await Promise.all([
@@ -186,6 +217,24 @@ export const register: Register = (on, options) => {
     await update($, counters, current => countTurn(current, e.durationMs))
     const completed = await next(e)
     await showPet($).catch(skipFailedRun)
+    if (stepSettings.isEnabled && e.reason === 'answer') inBackground(suggestSteps($, stepSettings))
     return completed
+  })
+
+  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    const followUps = await read($, steps)
+    if (e.props.hasSurvey || followUps.length === 0) return next(e)
+    const { Box, Text, Button } = $.ui.resolve(e)
+    return (
+      <Box flexDirection="row" flexWrap="wrap">
+        <Text dimColor>next </Text>
+        {followUps.map((step, index) => (
+          <Button key={`step-${index}`} plain hotkey={String(index + 1)} onPress={() => inBackground(takeStep($, step))}>
+            {step}
+            {'  '}
+          </Button>
+        ))}
+      </Box>
+    )
   })
 }
