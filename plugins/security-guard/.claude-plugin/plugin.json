@@ -1,0 +1,20 @@
+{
+  "name": "security-guard",
+  "version": "2.0.0",
+  "description": "Checks git commit and PR commands against the rules in your own and the project's CLAUDE.md files",
+  "author": {
+    "name": "Usama Sadiq",
+    "url": "https://github.com/UsamaSadiq"
+  },
+  "homepage": "https://github.com/UsamaSadiq/claude-mods",
+  "repository": "https://github.com/UsamaSadiq/claude-mods",
+  "license": "MIT",
+  "keywords": [
+    "rules",
+    "git",
+    "commits",
+    "pull-requests",
+    "guard",
+    "claude-md"
+  ]
+}
