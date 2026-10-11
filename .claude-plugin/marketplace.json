@@ -1,9 +1,52 @@
 {
   "name": "claude-mods",
-  "owner": { "name": "Usama Sadiq", "url": "https://github.com/UsamaSadiq" },
-  "metadata": { "description": "Small, fun and useful mods for Claude Code" },
+  "owner": {
+    "name": "Usama Sadiq",
+    "url": "https://github.com/UsamaSadiq"
+  },
+  "metadata": {
+    "description": "Small, fun and useful mods for Claude Code"
+  },
   "plugins": [
-    { "name": "terminal-pet", "source": "./plugins/terminal-pet", "description": "A cat in the empty prompt box that reacts to your day, plus /pet-stats silly stats" },
-    { "name": "usage-band", "source": "./plugins/usage-band", "description": "Session and weekly plan usage on the prompt hint line" }
+    {
+      "name": "terminal-pet",
+      "source": "./plugins/terminal-pet",
+      "description": "A cat in the empty prompt box that reacts to your day, with next-step suggestions beside it and /pet-stats silly stats"
+    },
+    {
+      "name": "usage-band",
+      "source": "./plugins/usage-band",
+      "description": "Session and weekly plan usage on the prompt hint line"
+    },
+    {
+      "name": "ringtones",
+      "source": "./plugins/ringtones",
+      "description": "Short synthesized chimes when a long turn finishes, a call is blocked, a turn fails or you ship"
+    },
+    {
+      "name": "cross-fire",
+      "source": "./plugins/cross-fire",
+      "description": "Holds destructive shell commands for your confirmation and says what they would hit"
+    },
+    {
+      "name": "security-guard",
+      "source": "./plugins/security-guard",
+      "description": "Checks git commit and PR commands against the rules in your own and the project's CLAUDE.md files"
+    },
+    {
+      "name": "session-resume",
+      "source": "./plugins/session-resume",
+      "description": "Sends \"continue\" when a rate-limit window resets after a limit stopped your turn"
+    },
+    {
+      "name": "erp-log-nudge",
+      "source": "./plugins/erp-log-nudge",
+      "description": "Late-day weekday reminder to log ERP time when today is still empty"
+    },
+    {
+      "name": "render-md",
+      "source": "./plugins/render-md",
+      "description": "Renders the Markdown files Claude edits in a side pane, plus /render-md <file>"
+    }
   ]
 }
