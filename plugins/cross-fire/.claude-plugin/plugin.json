@@ -1,0 +1,10 @@
+{
+  "name": "cross-fire",
+  "version": "1.0.0",
+  "description": "Holds destructive shell commands (rm -r, force pushes, hard resets, DROP TABLE) for your confirmation and says what they would hit",
+  "author": { "name": "Usama Sadiq", "url": "https://github.com/UsamaSadiq" },
+  "homepage": "https://github.com/UsamaSadiq/claude-mods",
+  "repository": "https://github.com/UsamaSadiq/claude-mods",
+  "license": "MIT",
+  "keywords": ["safety", "guard", "bash", "git"]
+}
