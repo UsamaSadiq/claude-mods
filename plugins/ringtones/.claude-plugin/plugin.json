@@ -1,0 +1,31 @@
+{
+  "name": "ringtones",
+  "version": "1.0.0",
+  "description": "Short synthesized chimes when a long turn finishes, a call is blocked, a turn fails or you ship",
+  "author": { "name": "Usama Sadiq", "url": "https://github.com/UsamaSadiq" },
+  "homepage": "https://github.com/UsamaSadiq/claude-mods",
+  "repository": "https://github.com/UsamaSadiq/claude-mods",
+  "license": "MIT",
+  "keywords": ["sound", "audio", "fun"],
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "isMuted": {
+      "type": "boolean",
+      "title": "Mute",
+      "description": "Silence every ringtone without uninstalling the mod.",
+      "default": false
+    },
+    "volume": {
+      "type": "number",
+      "title": "Volume",
+      "description": "Linear gain from 0 to 4. 1 is the recorded level.",
+      "default": 0.6
+    },
+    "minTurnSeconds": {
+      "type": "number",
+      "title": "Shortest turn that chimes",
+      "description": "Only turns at least this long play the done chime, so quick answers stay quiet.",
+      "default": 20
+    }
+  }
+}
