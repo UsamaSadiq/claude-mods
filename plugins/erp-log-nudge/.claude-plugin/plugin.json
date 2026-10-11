@@ -1,0 +1,30 @@
+{
+  "name": "erp-log-nudge",
+  "version": "1.0.0",
+  "description": "Reminds you late on weekdays to log your ERP time when today is still empty, pointing at /generate-erp-logs",
+  "author": { "name": "Usama Sadiq", "url": "https://github.com/UsamaSadiq" },
+  "homepage": "https://github.com/UsamaSadiq/claude-mods",
+  "repository": "https://github.com/UsamaSadiq/claude-mods",
+  "license": "MIT",
+  "keywords": ["erp", "timesheet", "reminder", "productivity"],
+  "userConfig": {
+    "nudgeHour": {
+      "type": "number",
+      "title": "Nudge hour",
+      "description": "Local hour (0-23) after which a weekday nudge may appear, once a day. Set -1 to turn nudges off.",
+      "default": 20
+    },
+    "server": {
+      "type": "string",
+      "title": "ERP connector name",
+      "description": "The ERP MCP server's name as /mcp lists it, or in tool-name spelling.",
+      "default": "claude_ai_ERP_MCP"
+    },
+    "skill": {
+      "type": "string",
+      "title": "Skill to run",
+      "description": "The slash command the nudge points at.",
+      "default": "/generate-erp-logs"
+    }
+  }
+}
