@@ -1,6 +1,6 @@
 {
   "name": "terminal-pet",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "A cat in the empty prompt box that reacts to your day, with next-step suggestions beside it and /pet-stats silly stats",
   "author": { "name": "Usama Sadiq", "url": "https://github.com/UsamaSadiq" },
   "homepage": "https://github.com/UsamaSadiq/claude-mods",
