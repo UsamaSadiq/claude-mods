@@ -2,7 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { UsageWindow } from '../types'
-import { hintTail } from './format'
+import { usageGauges, WAITING_SUMMARY } from './format'
 
 const REFRESH_MS = 60_000
 
@@ -35,9 +35,25 @@ export const register: Register = on => {
     return next(e)
   })
 
-  on('ui.render', { component: 'PromptHint' }, async ($, e, next) => {
+  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    const below = await next(e)
+    if (e.props.hasSurvey) return below
     const [current, clock] = await Promise.all([read($, windows), read($, now)])
-    const tail = [e.props.tail, hintTail(current, clock)].filter(Boolean).join('  ')
-    return next({ ...e, props: { ...e.props, tail } })
+    const { Box, Text } = $.ui.resolve(e)
+    const gauges = usageGauges(current, clock)
+    const bar = (
+      <Box flexDirection="row" flexWrap="wrap">
+        {gauges.length === 0 && <Text dimColor>{WAITING_SUMMARY}</Text>}
+        {gauges.map(gauge => (
+          <Box key={gauge.label} marginRight={3}>
+            <Text dimColor>{gauge.label} </Text>
+            <Text color={gauge.tone}>{gauge.cells}</Text>
+            <Text dimColor> {gauge.percent}</Text>
+            {gauge.resetsIn && <Text dimColor> · {gauge.resetsIn}</Text>}
+          </Box>
+        ))}
+      </Box>
+    )
+    return below ? <Box flexDirection="column">{below}{bar}</Box> : bar
   })
 }

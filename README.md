@@ -2,12 +2,12 @@
 
 Small, fun and useful mods for [Claude Code](https://claude.com/claude-code). Each one is a single command away.
 
-![terminal-pet yawning in the empty prompt box, usage-band on the hint line below](assets/cat-and-usage.png)
+![terminal-pet yawning in the empty prompt box, old hint-line usage-band](assets/cat-and-usage.png)
 
 | Mod | What it does |
 |---|---|
 | [terminal-pet](#terminal-pet) | A cat in the empty prompt box that reacts to your day, with next-step suggestions beside it, plus `/pet-stats` silly stats |
-| [usage-band](#usage-band) | Your session and weekly plan usage, always visible on the prompt hint line |
+| [usage-band](#usage-band) | Your session and weekly plan usage as gauges in a bar above the prompt |
 | [ringtones](#ringtones) | Short synthesized chimes for finished turns, blocked calls, failures and shipping |
 | [cross-fire](#cross-fire) | Holds destructive shell commands for your confirmation and says what they would hit |
 | [security-guard](#security-guard) | Checks commits and PRs against the rules in your own and the project's CLAUDE.md |
@@ -90,13 +90,13 @@ The same report pops up once a day after the report hour.
 
 ## usage-band
 
-Adds your plan usage to the dim hint line under the prompt, with time left until each window resets:
+Draws your plan usage as a bar above the prompt, with time left until each window resets. The hint line under the prompt is left alone:
 
 ```
-? for shortcuts · * Session 27% · 1h 52m  * Weekly 45% · 4d 19h
+Session ▰▱▱▱▱▱▱▱ 12% · 4h 2m   Weekly ▰▰▰▱▱▱▱▱ 43% · 4d 21h
 ```
 
-It refreshes every minute, and straight away whenever Claude Code reports new rate-limit figures. Until the first reading arrives it shows `* Usage: waiting for the first reading`.
+Each gauge has eight cells and turns yellow from 70% and red from 90%. It refreshes every minute, and straight away whenever Claude Code reports new rate-limit figures. Until the first reading arrives it shows `Usage: waiting for the first reading`. It steps aside for a survey, and it stacks with terminal-pet's next-step suggestions rather than replacing them.
 
 ## ringtones
 
@@ -180,7 +180,7 @@ A pane opened by an edit needs a terminal at least 144 columns wide, and below t
 
 ## Using them together
 
-Both mods are built to share the screen. usage-band adds its text after anything another mod puts on the hint line, and terminal-pet uses the prompt box, so neither overwrites the other.
+Both mods are built to share the screen. usage-band and terminal-pet's next steps both draw above the prompt and stack in one column, and terminal-pet uses the prompt box, so neither overwrites the other.
 
 ## Developing
 

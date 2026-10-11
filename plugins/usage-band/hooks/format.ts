@@ -36,18 +36,32 @@ export const timeUntil = (resetsAt: string | undefined, now: number): string | u
   return `${Math.floor(remaining / MINUTE)}m`
 }
 
-const windowSummary = (window: UsageWindow, now: number): string => {
-  const head = `${windowLabel(window.kind)} ${formatPercent(window.percentUsed)}`
-  const resetsIn = timeUntil(window.resetsAt, now)
-  return resetsIn ? `${head} · ${resetsIn}` : head
+const GAUGE_CELLS = 8
+const FILLED_CELL = '▰'
+const EMPTY_CELL = '▱'
+
+export type Tone = 'success' | 'warning' | 'error'
+
+export type Gauge = { label: string; cells: string; percent: string; tone: Tone; resetsIn?: string }
+
+export const gaugeCells = (percentUsed: number): string => {
+  const filled = Math.min(GAUGE_CELLS, Math.max(0, Math.round((percentUsed / 100) * GAUGE_CELLS)))
+  return FILLED_CELL.repeat(filled) + EMPTY_CELL.repeat(GAUGE_CELLS - filled)
 }
 
-const SEGMENT_MARK = '*'
+export const toneOf = (percentUsed: number): Tone => {
+  if (percentUsed >= 90) return 'error'
+  if (percentUsed >= 70) return 'warning'
+  return 'success'
+}
 
-export const usageSegments = (windows: readonly UsageWindow[], now: number): string[] =>
-  windows.length === 0 ? [WAITING_SUMMARY] : orderWindows(windows).map(window => windowSummary(window, now))
+const toGauge = (window: UsageWindow, now: number): Gauge => ({
+  label: windowLabel(window.kind),
+  cells: gaugeCells(window.percentUsed),
+  percent: formatPercent(window.percentUsed),
+  tone: toneOf(window.percentUsed),
+  resetsIn: timeUntil(window.resetsAt, now),
+})
 
-export const hintTail = (windows: readonly UsageWindow[], now: number): string =>
-  usageSegments(windows, now)
-    .map(segment => `${SEGMENT_MARK} ${segment}`)
-    .join('  ')
+export const usageGauges = (windows: readonly UsageWindow[], now: number): Gauge[] =>
+  orderWindows(windows).map(window => toGauge(window, now))
