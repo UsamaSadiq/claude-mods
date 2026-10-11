@@ -222,10 +222,11 @@ export const register: Register = (on, options) => {
   })
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    const below = await next(e)
     const followUps = await read($, steps)
-    if (e.props.hasSurvey || followUps.length === 0) return next(e)
+    if (e.props.hasSurvey || followUps.length === 0) return below
     const { Box, Text, Button } = $.ui.resolve(e)
-    return (
+    const band = (
       <Box flexDirection="row" flexWrap="wrap">
         <Text dimColor>next </Text>
         {followUps.map((step, index) => (
@@ -236,5 +237,6 @@ export const register: Register = (on, options) => {
         ))}
       </Box>
     )
+    return below ? <Box flexDirection="column">{below}{band}</Box> : band
   })
 }
