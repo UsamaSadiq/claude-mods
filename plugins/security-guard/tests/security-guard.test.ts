@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'claude-code/testing'
-import type { On } from 'claude-code'
+import type { ModelCompleteResult, On } from 'claude-code'
 
 import { hasRules, isGuardedCommand, judgePrompt, parseVerdict, ruleLocations, ruleSource } from '../hooks/rules'
 
@@ -69,12 +69,21 @@ describe('verdict', () => {
 
 const passThrough = (on: On) => on('tool.call', () => ({ result: { stdout: '', stderr: '' } }))
 
-const withRules = (on: On, rules: Record<string, string>, reply: { isAnswered: boolean; text?: string }) => {
+const NO_USAGE = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
+
+const answered = (text: string): ModelCompleteResult => ({ isAnswered: true, text, usage: NO_USAGE })
+
+const NO_REPLY: ModelCompleteResult = { isAnswered: false, reason: 'empty-reply', usage: NO_USAGE }
+
+const withRules = (on: On, rules: Record<string, string>, reply: ModelCompleteResult, asked: string[] = []) => {
   on('env.get', () => ({ value: '/home/u' }))
   on('session.root', () => ({ value: '/work/app' }))
   on('fs.exists', (_$, e) => ({ value: e.path in rules }))
   on('fs.read', (_$, e) => ({ value: rules[e.path] ?? '' }))
-  on('model.complete', () => ({ value: reply }))
+  on('model.complete', (_$, e) => {
+    asked.push(e.model)
+    return { value: reply }
+  })
   passThrough(on)
 }
 
@@ -82,31 +91,38 @@ describe('hook', () => {
   const rules = { '/home/u/.claude/CLAUDE.md': 'Use Conventional Commits.' }
 
   test('denies a command the judge blocks, with the reason', async ($, on) => {
-    withRules(on, rules, { isAnswered: true, text: 'BLOCK: use a Conventional Commit subject.' })
+    withRules(on, rules, answered('BLOCK: use a Conventional Commit subject.'))
     const ran = await $.tool.call({ tool: 'Bash', command: 'git commit -m "Updated things"' })
     expect(ran.deny).toBe('security-guard: use a Conventional Commit subject. Fix it and run the command again.')
   })
 
   test('runs a command the judge accepts', async ($, on) => {
-    withRules(on, rules, { isAnswered: true, text: 'OK' })
+    withRules(on, rules, answered('OK'))
     const ran = await $.tool.call({ tool: 'Bash', command: 'git commit -m "fix: x"' })
     expect(ran.deny).toBeUndefined()
   })
 
+  test('asks sonnet unless the model option says otherwise', async ($, on) => {
+    const asked: string[] = []
+    withRules(on, rules, answered('OK'), asked)
+    await $.tool.call({ tool: 'Bash', command: 'git commit -m "fix: x"' })
+    expect(asked).toEqual(['sonnet'])
+  })
+
   test('skips the judge when no rules exist', async ($, on) => {
-    withRules(on, {}, { isAnswered: true, text: 'BLOCK: should never be asked' })
+    withRules(on, {}, answered('BLOCK: should never be asked'))
     const ran = await $.tool.call({ tool: 'Bash', command: 'git commit -m "anything"' })
     expect(ran.deny).toBeUndefined()
   })
 
   test('does not judge other commands', async ($, on) => {
-    withRules(on, rules, { isAnswered: true, text: 'BLOCK: should never be asked' })
+    withRules(on, rules, answered('BLOCK: should never be asked'))
     const ran = await $.tool.call({ tool: 'Bash', command: 'git status' })
     expect(ran.deny).toBeUndefined()
   })
 
   test('lets the command through when the judge is unavailable', async ($, on) => {
-    withRules(on, rules, { isAnswered: false })
+    withRules(on, rules, NO_REPLY)
     const ran = await $.tool.call({ tool: 'Bash', command: 'git commit -m "x"' })
     expect(ran.deny).toBeUndefined()
   })

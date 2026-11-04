@@ -1,11 +1,16 @@
-import type { EngineInterface, Register } from 'claude-code'
+import type { EngineInterface, PluginOptions, Register } from 'claude-code'
 
 import { hasRules, isGuardedCommand, judgePrompt, parseVerdict, ruleLocations, ruleSource } from './rules'
 import type { RuleSource } from './rules'
 
-const JUDGE_MODEL = 'haiku'
+const DEFAULT_JUDGE_MODEL = 'sonnet'
 const JUDGE_MAX_TOKENS = 120
 const JUDGE_TIMEOUT_MS = 20000
+
+const judgeModelOf = (options: PluginOptions): string => {
+  const model = options.model
+  return typeof model === 'string' && model.trim() !== '' ? model.trim() : DEFAULT_JUDGE_MODEL
+}
 
 const refusal = (violation: string): string => `security-guard: ${violation} Fix it and run the command again.`
 
@@ -20,11 +25,11 @@ const loadRules = async ($: EngineInterface): Promise<RuleSource[]> => {
   )
 }
 
-const judgeCommand = async ($: EngineInterface, command: string): Promise<string | undefined> => {
+const judgeCommand = async ($: EngineInterface, model: string, command: string): Promise<string | undefined> => {
   const sources = await loadRules($)
   if (!hasRules(sources)) return undefined
   const reply = await $.model.complete({
-    model: JUDGE_MODEL,
+    model,
     prompt: judgePrompt(sources, command),
     maxTokens: JUDGE_MAX_TOKENS,
     effort: 'low',
@@ -33,10 +38,12 @@ const judgeCommand = async ($: EngineInterface, command: string): Promise<string
   return reply.isAnswered ? parseVerdict(reply.text) : undefined
 }
 
-export const register: Register = on => {
+export const register: Register = (on, options) => {
+  const judgeModel = judgeModelOf(options)
+
   on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
     if (!isGuardedCommand(e.command)) return next(e)
-    const violation = await judgeCommand($, e.command)
+    const violation = await judgeCommand($, judgeModel, e.command)
     return violation ? { deny: refusal(violation) } : next(e)
   }).catch((_$, e, next) => next(e))
 }

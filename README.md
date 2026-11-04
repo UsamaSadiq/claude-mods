@@ -136,7 +136,13 @@ It reads, when present:
 - `<project>/.claude/CLAUDE.md`
 - `<project>/CLAUDE.local.md`
 
-A small model (haiku) judges the command against the rules about commits and pull requests in those files, and the project's rule wins where they disagree. It runs only on those three commands, never on other Bash calls. With no rules found it does nothing. If the judge is unavailable or its reply is unreadable, the command goes through. There are no settings: change the rules, and the guard follows.
+A judge model reads the command against the rules about commits and pull requests in those files, and the project's rule wins where they disagree. It runs only on those three commands, never on other Bash calls. With no rules found it does nothing. If the judge is unavailable or its reply is unreadable, the command goes through. Change the rules, and the guard follows.
+
+**Settings** (in `/config`, or asked for at install):
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `model` | `sonnet` | The model that judges a command: an alias such as `sonnet` or `haiku`, or a full model id. |
 
 ## session-resume
 

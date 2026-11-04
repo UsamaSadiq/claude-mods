@@ -1,6 +1,6 @@
 {
   "name": "security-guard",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Checks git commit and PR commands against the rules in your own and the project's CLAUDE.md files",
   "author": {
     "name": "Usama Sadiq",
@@ -16,5 +16,13 @@
     "pull-requests",
     "guard",
     "claude-md"
-  ]
+  ],
+  "userConfig": {
+    "model": {
+      "type": "string",
+      "title": "Judge model",
+      "description": "The model that judges a command against your rules: an alias such as sonnet or haiku, or a full model id.",
+      "default": "sonnet"
+    }
+  }
 }
