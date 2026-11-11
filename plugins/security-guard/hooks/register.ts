@@ -1,7 +1,17 @@
 import type { EngineInterface, PluginOptions, Register } from 'claude-code'
 
-import { hasRules, isGuardedCommand, judgePrompt, parseVerdict, ruleLocations, ruleSource } from './rules'
-import type { RuleSource } from './rules'
+import {
+  hasRules,
+  isGuardedCommand,
+  judgePrompt,
+  parseVerdict,
+  referencedFile,
+  referencedFilePaths,
+  resolvePath,
+  ruleLocations,
+  ruleSource,
+} from './rules'
+import type { ReferencedFile, RuleSource } from './rules'
 
 const DEFAULT_JUDGE_MODEL = 'sonnet'
 const JUDGE_MAX_TOKENS = 120
@@ -25,12 +35,26 @@ const loadRules = async ($: EngineInterface): Promise<RuleSource[]> => {
   )
 }
 
+const readReferencedFile = async ($: EngineInterface, path: string, root: string): Promise<ReferencedFile> => {
+  const resolved = resolvePath(path, root)
+  const text = (await $.fs.exists(resolved)) ? await $.fs.read(resolved).catch(() => undefined) : undefined
+  return referencedFile(path, text)
+}
+
+const loadReferencedFiles = async ($: EngineInterface, command: string): Promise<ReferencedFile[]> => {
+  const paths = referencedFilePaths(command)
+  if (paths.length === 0) return []
+  const root = await $.session.root()
+  return Promise.all(paths.map(path => readReferencedFile($, path, root)))
+}
+
 const judgeCommand = async ($: EngineInterface, model: string, command: string): Promise<string | undefined> => {
   const sources = await loadRules($)
   if (!hasRules(sources)) return undefined
+  const files = await loadReferencedFiles($, command)
   const reply = await $.model.complete({
     model,
-    prompt: judgePrompt(sources, command),
+    prompt: judgePrompt(sources, command, files),
     maxTokens: JUDGE_MAX_TOKENS,
     effort: 'low',
     timeoutMs: JUDGE_TIMEOUT_MS,

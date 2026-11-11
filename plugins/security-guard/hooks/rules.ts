@@ -20,7 +20,41 @@ export const hasRules = (sources: readonly RuleSource[]): boolean => sources.som
 
 const renderSource = (source: RuleSource): string => `<rules from="${source.label}">\n${source.text}\n</rules>`
 
-export const judgePrompt = (sources: readonly RuleSource[], command: string): string =>
+export type ReferencedFile = { path: string; text: string | undefined }
+
+const MAX_FILE_CHARS = 20000
+
+const MESSAGE_FILE_FLAG = /(?:^|\s)(?:--body-file|--file|-F)(?:=|\s+)(?:"([^"]+)"|'([^']+)'|([^\s;&|]+))/g
+
+const STDIN = '-'
+
+export const referencedFilePaths = (command: string): string[] =>
+  [...command.matchAll(MESSAGE_FILE_FLAG)]
+    .map(match => match[1] ?? match[2] ?? match[3] ?? '')
+    .filter(path => path !== '' && path !== STDIN)
+
+export const resolvePath = (path: string, root: string): string => (path.startsWith('/') ? path : `${root}/${path}`)
+
+export const referencedFile = (path: string, text: string | undefined): ReferencedFile => ({
+  path,
+  text: text === undefined ? undefined : text.slice(0, MAX_FILE_CHARS),
+})
+
+const renderFile = (file: ReferencedFile): string =>
+  file.text === undefined
+    ? `<file path="${file.path}" unreadable="true"></file>`
+    : `<file path="${file.path}">\n${file.text}\n</file>`
+
+const fileSection = (files: readonly ReferencedFile[]): string[] =>
+  files.length === 0
+    ? []
+    : [
+        'The command reads its message or body from these files; judge their contents as part of the command. An unreadable file is not a violation.',
+        ...files.map(renderFile),
+        '',
+      ]
+
+export const judgePrompt = (sources: readonly RuleSource[], command: string, files: readonly ReferencedFile[] = []): string =>
   [
     'You check one shell command against the rules its author wrote for their coding assistant.',
     'Only rules about git commits, commit messages, pull requests and their titles or bodies apply. Ignore every other rule.',
@@ -31,13 +65,18 @@ export const judgePrompt = (sources: readonly RuleSource[], command: string): st
     '',
     `<command>\n${command}\n</command>`,
     '',
-    'Reply with exactly one line.',
-    'OK if the command follows every applicable rule, or if no rule applies.',
-    'BLOCK: <the rule it breaks and how to fix the command, in one sentence> otherwise.',
+    ...fileSection(files),
+    'Decide first, then answer. Reply with exactly one line and nothing else: no reasoning, no second thoughts.',
+    'OK if the command follows every applicable rule, if no rule applies, or if you are unsure.',
+    'BLOCK: <the rule it breaks and how to fix the command, in one sentence> only when you can name a concrete violation in the command or its files.',
   ].join('\n')
+
+const SELF_CONTRADICTION = /\b(?:should be ok|not a block|no violation|none found|follows every|should pass|nothing to fix)\b/i
+
+const isSelfContradicting = (reason: string): boolean => SELF_CONTRADICTION.test(reason)
 
 export const parseVerdict = (reply: string): string | undefined => {
   const line = (reply.trim().split('\n')[0] ?? '').trim()
-  const match = /^BLOCK:\s*(.+)$/i.exec(line)
-  return match?.[1]?.trim()
+  const reason = /^BLOCK:\s*(.+)$/i.exec(line)?.[1]?.trim()
+  return reason === undefined || isSelfContradicting(reason) ? undefined : reason
 }

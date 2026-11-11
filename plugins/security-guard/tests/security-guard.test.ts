@@ -1,7 +1,17 @@
 import { describe, expect, test } from 'claude-code/testing'
 import type { ModelCompleteResult, On } from 'claude-code'
 
-import { hasRules, isGuardedCommand, judgePrompt, parseVerdict, ruleLocations, ruleSource } from '../hooks/rules'
+import {
+  hasRules,
+  isGuardedCommand,
+  judgePrompt,
+  parseVerdict,
+  referencedFile,
+  referencedFilePaths,
+  resolvePath,
+  ruleLocations,
+  ruleSource,
+} from '../hooks/rules'
 
 describe('guarded commands', () => {
   test('matches commits and pull request writes', () => {
@@ -65,6 +75,47 @@ describe('verdict', () => {
     expect(parseVerdict('')).toBeUndefined()
     expect(parseVerdict('I think this is fine')).toBeUndefined()
   })
+
+  test('ignores a block that argues itself back to a pass', () => {
+    expect(parseVerdict('BLOCK: the body has no em-dashes, so this should be OK, not a block.')).toBeUndefined()
+    expect(parseVerdict('BLOCK: Rechecking: no violation found.')).toBeUndefined()
+    expect(parseVerdict('BLOCK: This command follows every rule, so it should pass.')).toBeUndefined()
+  })
+
+  test('keeps a block whose reason names a concrete violation', () => {
+    expect(parseVerdict('BLOCK: the body has a ## Summary section; keep only Description and Testing.')).toBe(
+      'the body has a ## Summary section; keep only Description and Testing.',
+    )
+  })
+})
+
+describe('referenced files', () => {
+  test('finds body and message files in any spelling', () => {
+    expect(referencedFilePaths('gh pr create --title t --body-file /tmp/body.md')).toEqual(['/tmp/body.md'])
+    expect(referencedFilePaths('gh pr create --body-file="/tmp/a b.md"')).toEqual(['/tmp/a b.md'])
+    expect(referencedFilePaths("gh pr edit 4 -F 'notes.md'")).toEqual(['notes.md'])
+    expect(referencedFilePaths('git commit -F msg.txt && git push')).toEqual(['msg.txt'])
+    expect(referencedFilePaths('git commit --file=msg.txt')).toEqual(['msg.txt'])
+  })
+
+  test('skips stdin and commands without a file', () => {
+    expect(referencedFilePaths('git commit -F -')).toEqual([])
+    expect(referencedFilePaths('gh pr create --body "x"')).toEqual([])
+  })
+
+  test('resolves relative paths against the session root', () => {
+    expect(resolvePath('body.md', '/work/app')).toBe('/work/app/body.md')
+    expect(resolvePath('/tmp/body.md', '/work/app')).toBe('/tmp/body.md')
+  })
+
+  test('puts file contents in the prompt, and marks unreadable ones', () => {
+    const prompt = judgePrompt([ruleSource('r', 'no em-dashes')], 'gh pr create --body-file b.md', [
+      referencedFile('b.md', '## Description\n- x'),
+      referencedFile('gone.md', undefined),
+    ])
+    expect(prompt).toContain('<file path="b.md">\n## Description\n- x\n</file>')
+    expect(prompt).toContain('<file path="gone.md" unreadable="true"></file>')
+  })
 })
 
 const passThrough = (on: On) => on('tool.call', () => ({ result: { stdout: '', stderr: '' } }))
@@ -119,6 +170,22 @@ describe('hook', () => {
     withRules(on, rules, answered('BLOCK: should never be asked'))
     const ran = await $.tool.call({ tool: 'Bash', command: 'git status' })
     expect(ran.deny).toBeUndefined()
+  })
+
+  test('shows the judge the body file contents', async ($, on) => {
+    const prompts: string[] = []
+    on('env.get', () => ({ value: '/home/u' }))
+    on('session.root', () => ({ value: '/work/app' }))
+    const files: Record<string, string> = { ...rules, '/work/app/body.md': '## Summary\n- x' }
+    on('fs.exists', (_$, e) => ({ value: e.path in files }))
+    on('fs.read', (_$, e) => ({ value: files[e.path] ?? '' }))
+    on('model.complete', (_$, e) => {
+      prompts.push(e.prompt)
+      return { value: answered('OK') }
+    })
+    passThrough(on)
+    await $.tool.call({ tool: 'Bash', command: 'gh pr create --title t --body-file body.md' })
+    expect(prompts[0]).toContain('<file path="body.md">\n## Summary\n- x\n</file>')
   })
 
   test('lets the command through when the judge is unavailable', async ($, on) => {
