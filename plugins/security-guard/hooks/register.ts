@@ -1,7 +1,9 @@
 import type { EngineInterface, PluginOptions, Register } from 'claude-code'
 
 import {
+  confirmPrompt,
   evidenceOf,
+  isYes,
   hasRules,
   isGuardedCommand,
   judgePrompt,
@@ -16,6 +18,7 @@ import type { ReferencedFile, RuleSource } from './rules'
 
 const DEFAULT_JUDGE_MODEL = 'sonnet'
 const JUDGE_MAX_TOKENS = 120
+const CONFIRM_MAX_TOKENS = 5
 const JUDGE_TIMEOUT_MS = 20000
 
 const judgeModelOf = (options: PluginOptions): string => {
@@ -60,7 +63,19 @@ const judgeCommand = async ($: EngineInterface, model: string, command: string):
     effort: 'low',
     timeoutMs: JUDGE_TIMEOUT_MS,
   })
-  return reply.isAnswered ? parseVerdict(reply.text, evidenceOf(command, files)) : undefined
+  const violation = reply.isAnswered ? parseVerdict(reply.text, evidenceOf(command, files)) : undefined
+  return violation && (await isConfirmed($, model, sources, violation)) ? violation : undefined
+}
+
+const isConfirmed = async ($: EngineInterface, model: string, sources: RuleSource[], violation: string): Promise<boolean> => {
+  const reply = await $.model.complete({
+    model,
+    prompt: confirmPrompt(sources, violation),
+    maxTokens: CONFIRM_MAX_TOKENS,
+    effort: 'low',
+    timeoutMs: JUDGE_TIMEOUT_MS,
+  })
+  return reply.isAnswered && isYes(reply.text)
 }
 
 export const register: Register = (on, options) => {

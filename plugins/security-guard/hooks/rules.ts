@@ -73,7 +73,18 @@ export const judgePrompt = (sources: readonly RuleSource[], command: string, fil
   ].join('\n')
 
 const SELF_CONTRADICTION =
-  /\b(?:should be ok|not a block|no violation|no concrete violation|none found|follows every|should pass|nothing to fix|so recheck)\b/i
+  /\b(?:should be ok|not a block|no violation|no concrete violation|none found|follows every|should pass|nothing to fix|so recheck|nothing violates|this is wrong|wait)\b/i
+
+export const confirmPrompt = (sources: readonly RuleSource[], violation: string): string =>
+  [
+    'Rules an author wrote for commit messages and pull requests:',
+    ...sources.filter(source => source.text !== '').map(renderSource),
+    '',
+    `A reviewer claims this quoted text breaks a rule: ${violation}`,
+    'Does the quoted text itself clearly break one of these rules? Answer with one word: YES or NO.',
+  ].join('\n')
+
+export const isYes = (reply: string): boolean => /^\s*yes\b/i.test(reply)
 
 const isSelfContradicting = (reason: string): boolean => SELF_CONTRADICTION.test(reason)
 

@@ -90,6 +90,10 @@ describe('verdict', () => {
     expect(parseVerdict('BLOCK: "fix: x — y" contains an em-dash', evidence)).toBeUndefined()
   })
 
+  test('ignores a block that wavers mid-sentence', () => {
+    expect(parseVerdict('BLOCK: "## Summary" style is met. Wait, nothing violates, so this is wrong.', evidence)).toBeUndefined()
+  })
+
   test('ignores a block that argues itself back to a pass', () => {
     expect(parseVerdict('BLOCK: "Updated things" so recheck: no concrete violation exists.', evidence)).toBeUndefined()
     expect(parseVerdict('BLOCK: "## Summary" this follows every rule, so it should pass.', evidence)).toBeUndefined()
@@ -125,6 +129,8 @@ describe('referenced files', () => {
   })
 })
 
+const COMMIT_WITH_BAD_SUBJECT = ['git', 'commit', '-m', '"Updated things"'].join(' ')
+
 const passThrough = (on: On) => on('tool.call', () => ({ result: { stdout: '', stderr: '' } }))
 
 const NO_USAGE = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
@@ -133,14 +139,22 @@ const answered = (text: string): ModelCompleteResult => ({ isAnswered: true, tex
 
 const NO_REPLY: ModelCompleteResult = { isAnswered: false, reason: 'empty-reply', usage: NO_USAGE }
 
-const withRules = (on: On, rules: Record<string, string>, reply: ModelCompleteResult, asked: string[] = []) => {
+const isConfirmCall = (prompt: string): boolean => prompt.includes('Answer with one word: YES or NO')
+
+const withRules = (
+  on: On,
+  rules: Record<string, string>,
+  reply: ModelCompleteResult,
+  asked: string[] = [],
+  confirm: ModelCompleteResult = answered('YES'),
+) => {
   on('env.get', () => ({ value: '/home/u' }))
   on('session.root', () => ({ value: '/work/app' }))
   on('fs.exists', (_$, e) => ({ value: e.path in rules }))
   on('fs.read', (_$, e) => ({ value: rules[e.path] ?? '' }))
   on('model.complete', (_$, e) => {
     asked.push(e.model)
-    return { value: reply }
+    return { value: isConfirmCall(e.prompt) ? confirm : reply }
   })
   passThrough(on)
 }
@@ -160,10 +174,18 @@ describe('hook', () => {
     const files: Record<string, string> = { ...rules, '/work/app/body.md': '## Summary\n- x' }
     on('fs.exists', (_$, e) => ({ value: e.path in files }))
     on('fs.read', (_$, e) => ({ value: files[e.path] ?? '' }))
-    on('model.complete', () => ({ value: answered('BLOCK: "## Summary" keep only Description and Testing.') }))
+    on('model.complete', (_$, e) => ({
+      value: isConfirmCall(e.prompt) ? answered('YES') : answered('BLOCK: "## Summary" keep only Description and Testing.'),
+    }))
     passThrough(on)
     const ran = await $.tool.call({ tool: 'Bash', command: 'gh pr create --title t --body-file body.md' })
     expect(ran.deny).toBe('security-guard: "## Summary": keep only Description and Testing. Fix it and run the command again.')
+  })
+
+  test('runs a command when the confirmation says the quote is fine', async ($, on) => {
+    withRules(on, rules, answered('BLOCK: "Updated things" use a Conventional Commit subject.'), [], answered('NO'))
+    const ran = await $.tool.call({ tool: 'Bash', command: COMMIT_WITH_BAD_SUBJECT })
+    expect(ran.deny).toBeUndefined()
   })
 
   test('runs a command when the block quotes text that is not there', async ($, on) => {
