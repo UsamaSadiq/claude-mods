@@ -65,27 +65,34 @@ describe('judge prompt', () => {
 })
 
 describe('verdict', () => {
-  test('reads a block reason', () => {
-    expect(parseVerdict('BLOCK: subject is not a Conventional Commit; use feat: ...')).toBe('subject is not a Conventional Commit; use feat: ...')
-    expect(parseVerdict('block:   lowercase works too\nextra')).toBe('lowercase works too')
+  const evidence = 'git commit -m "Updated things"\n## Summary\n- x'
+
+  test('reads a block whose quote appears in the command or files', () => {
+    expect(parseVerdict('BLOCK: "Updated things" subject is not a Conventional Commit; use fix: ...', evidence)).toBe(
+      '"Updated things": subject is not a Conventional Commit; use fix: ...',
+    )
+    expect(parseVerdict('block:  "## Summary": keep only Description and Testing\nextra', evidence)).toBe(
+      '"## Summary": keep only Description and Testing',
+    )
   })
 
   test('treats OK and anything unreadable as a pass', () => {
-    expect(parseVerdict('OK')).toBeUndefined()
-    expect(parseVerdict('')).toBeUndefined()
-    expect(parseVerdict('I think this is fine')).toBeUndefined()
+    expect(parseVerdict('OK', evidence)).toBeUndefined()
+    expect(parseVerdict('', evidence)).toBeUndefined()
+    expect(parseVerdict('I think this is fine', evidence)).toBeUndefined()
+  })
+
+  test('ignores a block without a quote', () => {
+    expect(parseVerdict('BLOCK: subject is not a Conventional Commit', evidence)).toBeUndefined()
+  })
+
+  test('ignores a block whose quote is not in the command or files', () => {
+    expect(parseVerdict('BLOCK: "fix: x — y" contains an em-dash', evidence)).toBeUndefined()
   })
 
   test('ignores a block that argues itself back to a pass', () => {
-    expect(parseVerdict('BLOCK: the body has no em-dashes, so this should be OK, not a block.')).toBeUndefined()
-    expect(parseVerdict('BLOCK: Rechecking: no violation found.')).toBeUndefined()
-    expect(parseVerdict('BLOCK: This command follows every rule, so it should pass.')).toBeUndefined()
-  })
-
-  test('keeps a block whose reason names a concrete violation', () => {
-    expect(parseVerdict('BLOCK: the body has a ## Summary section; keep only Description and Testing.')).toBe(
-      'the body has a ## Summary section; keep only Description and Testing.',
-    )
+    expect(parseVerdict('BLOCK: "Updated things" so recheck: no concrete violation exists.', evidence)).toBeUndefined()
+    expect(parseVerdict('BLOCK: "## Summary" this follows every rule, so it should pass.', evidence)).toBeUndefined()
   })
 })
 
@@ -142,9 +149,27 @@ describe('hook', () => {
   const rules = { '/home/u/.claude/CLAUDE.md': 'Use Conventional Commits.' }
 
   test('denies a command the judge blocks, with the reason', async ($, on) => {
-    withRules(on, rules, answered('BLOCK: use a Conventional Commit subject.'))
+    withRules(on, rules, answered('BLOCK: "Updated things" use a Conventional Commit subject.'))
     const ran = await $.tool.call({ tool: 'Bash', command: 'git commit -m "Updated things"' })
-    expect(ran.deny).toBe('security-guard: use a Conventional Commit subject. Fix it and run the command again.')
+    expect(ran.deny).toBe('security-guard: "Updated things": use a Conventional Commit subject. Fix it and run the command again.')
+  })
+
+  test('denies on a quote that only the body file contains', async ($, on) => {
+    on('env.get', () => ({ value: '/home/u' }))
+    on('session.root', () => ({ value: '/work/app' }))
+    const files: Record<string, string> = { ...rules, '/work/app/body.md': '## Summary\n- x' }
+    on('fs.exists', (_$, e) => ({ value: e.path in files }))
+    on('fs.read', (_$, e) => ({ value: files[e.path] ?? '' }))
+    on('model.complete', () => ({ value: answered('BLOCK: "## Summary" keep only Description and Testing.') }))
+    passThrough(on)
+    const ran = await $.tool.call({ tool: 'Bash', command: 'gh pr create --title t --body-file body.md' })
+    expect(ran.deny).toBe('security-guard: "## Summary": keep only Description and Testing. Fix it and run the command again.')
+  })
+
+  test('runs a command when the block quotes text that is not there', async ($, on) => {
+    withRules(on, rules, answered('BLOCK: "an em—dash" remove the em-dash.'))
+    const ran = await $.tool.call({ tool: 'Bash', command: 'git commit -m "fix: x"' })
+    expect(ran.deny).toBeUndefined()
   })
 
   test('runs a command the judge accepts', async ($, on) => {

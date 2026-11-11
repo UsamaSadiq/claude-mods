@@ -1,6 +1,7 @@
 import type { EngineInterface, PluginOptions, Register } from 'claude-code'
 
 import {
+  evidenceOf,
   hasRules,
   isGuardedCommand,
   judgePrompt,
@@ -59,7 +60,7 @@ const judgeCommand = async ($: EngineInterface, model: string, command: string):
     effort: 'low',
     timeoutMs: JUDGE_TIMEOUT_MS,
   })
-  return reply.isAnswered ? parseVerdict(reply.text) : undefined
+  return reply.isAnswered ? parseVerdict(reply.text, evidenceOf(command, files)) : undefined
 }
 
 export const register: Register = (on, options) => {

@@ -1,6 +1,6 @@
 {
   "name": "security-guard",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "Checks git commit and PR commands against the rules in your own and the project's CLAUDE.md files",
   "author": {
     "name": "Usama Sadiq",

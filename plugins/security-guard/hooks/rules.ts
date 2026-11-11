@@ -68,15 +68,27 @@ export const judgePrompt = (sources: readonly RuleSource[], command: string, fil
     ...fileSection(files),
     'Decide first, then answer. Reply with exactly one line and nothing else: no reasoning, no second thoughts.',
     'OK if the command follows every applicable rule, if no rule applies, or if you are unsure.',
-    'BLOCK: <the rule it breaks and how to fix the command, in one sentence> only when you can name a concrete violation in the command or its files.',
+    'BLOCK: "<the exact offending text, copied verbatim from the command or its files>" <the rule it breaks and how to fix it, in one sentence>',
+    'Use BLOCK only when you can quote the offending text. For something missing, quote the line where it should be.',
   ].join('\n')
 
-const SELF_CONTRADICTION = /\b(?:should be ok|not a block|no violation|none found|follows every|should pass|nothing to fix)\b/i
+const SELF_CONTRADICTION =
+  /\b(?:should be ok|not a block|no violation|no concrete violation|none found|follows every|should pass|nothing to fix|so recheck)\b/i
 
 const isSelfContradicting = (reason: string): boolean => SELF_CONTRADICTION.test(reason)
 
-export const parseVerdict = (reply: string): string | undefined => {
+const normalised = (text: string): string => text.replace(/\s+/g, ' ').trim()
+
+const isGrounded = (quote: string, evidence: string): boolean => normalised(evidence).includes(normalised(quote))
+
+export const evidenceOf = (command: string, files: readonly ReferencedFile[]): string =>
+  [command, ...files.map(file => file.text ?? '')].join('\n')
+
+export const parseVerdict = (reply: string, evidence: string): string | undefined => {
   const line = (reply.trim().split('\n')[0] ?? '').trim()
-  const reason = /^BLOCK:\s*(.+)$/i.exec(line)?.[1]?.trim()
-  return reason === undefined || isSelfContradicting(reason) ? undefined : reason
+  const match = /^BLOCK:\s*"([^"]+)"\s*[:,-]?\s*(.+)$/i.exec(line)
+  const quote = match?.[1]?.trim()
+  const reason = match?.[2]?.trim()
+  if (!quote || !reason || isSelfContradicting(reason) || !isGrounded(quote, evidence)) return undefined
+  return `"${quote}": ${reason}`
 }
