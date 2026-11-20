@@ -18,6 +18,27 @@ describe('danger', () => {
     expect(labelOf('rm -rf node_modules src')).toBe('recursive delete')
   })
 
+  test('lets temp paths go', () => {
+    expect(labelOf('rm -rf /tmp/build-cache')).toBeUndefined()
+    expect(labelOf('rm -rf "/private/tmp/claude-502/scratch" /var/folders/xy/T/run')).toBeUndefined()
+    expect(labelOf('rm -rf "$TMPDIR/out" ${TMPDIR}/more')).toBeUndefined()
+    expect(labelOf('rm -rf /tmp/a node_modules')).toBeUndefined()
+  })
+
+  test('holds temp lookalikes and escapes', () => {
+    expect(labelOf('rm -rf /tmp')).toBe('recursive delete')
+    expect(labelOf('rm -rf /tmp/../etc')).toBe('recursive delete')
+    expect(labelOf('rm -rf /tmpfoo')).toBe('recursive delete')
+    expect(labelOf('rm -rf tmp/cache')).toBe('recursive delete')
+    expect(labelOf('rm -rf /tmp/a /home/me/project')).toBe('recursive delete')
+  })
+
+  test('checks every removal in a chained command', () => {
+    expect(labelOf('rm -rf /tmp/a && rm -rf ~/project')).toBe('recursive delete')
+    expect(assess('rm -rf /tmp/a; rm -rf ~/project')?.reach).toMatch(/~\/project/)
+    expect(labelOf('rm -rf /tmp/a && rm -rf /tmp/b')).toBeUndefined()
+  })
+
   test('holds force pushes but not leased ones', () => {
     expect(labelOf('git push --force origin main')).toBe('force push')
     expect(labelOf('git push -f')).toBe('force push')

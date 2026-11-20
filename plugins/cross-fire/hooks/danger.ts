@@ -16,13 +16,22 @@ const DISPOSABLE_DIRS = new Set([
   'venv',
 ])
 
-const RM_RECURSIVE = /\brm\s+(?:-[a-zA-Z]*\s+)*-[a-zA-Z]*[rR][a-zA-Z]*\s+((?:-[a-zA-Z-]+\s+)*)([^;&|\n]+)/
+const TEMP_ROOTS = ['/tmp', '/private/tmp', '/var/tmp', '/var/folders', '/private/var/folders', '$TMPDIR', '${TMPDIR}']
 
-const targetsOf = (argumentText: string): string[] => argumentText.trim().split(/\s+/).filter(Boolean)
+const RM_RECURSIVE = /\brm\s+(?:-[a-zA-Z]*\s+)*-[a-zA-Z]*[rR][a-zA-Z]*\s+((?:-[a-zA-Z-]+\s+)*)([^;&|\n]+)/g
+
+const unquoted = (target: string): string => target.replace(/^(['"])(.*)\1$/, '$2')
+
+const targetsOf = (argumentText: string): string[] => argumentText.trim().split(/\s+/).filter(Boolean).map(unquoted)
 
 const baseName = (path: string): string => path.replace(/\/+$/, '').split('/').pop() ?? path
 
-const isDisposable = (target: string): boolean => DISPOSABLE_DIRS.has(baseName(target))
+const climbsOut = (path: string): boolean => path.split('/').includes('..')
+
+const isInsideTempRoot = (target: string): boolean =>
+  !climbsOut(target) && TEMP_ROOTS.some(root => target.startsWith(`${root}/`) && target.length > root.length + 1)
+
+const isDisposable = (target: string): boolean => DISPOSABLE_DIRS.has(baseName(target)) || isInsideTempRoot(target)
 
 const describeTargets = (targets: readonly string[]): string => {
   const shown = targets.slice(0, 3).join(', ')
@@ -77,12 +86,14 @@ const rules: readonly Rule[] = [
   },
 ]
 
+const targetsOfRemoval = (match: RegExpMatchArray): string[] => targetsOf(match[2] ?? '')
+
+const isDisposableRemoval = (targets: readonly string[]): boolean => targets.length > 0 && targets.every(isDisposable)
+
 const recursiveRemoval = (command: string): Danger | undefined => {
-  const match = command.match(RM_RECURSIVE)
-  if (!match) return undefined
-  const targets = targetsOf(match[2] ?? '')
-  if (targets.length > 0 && targets.every(isDisposable)) return undefined
-  return { label: 'recursive delete', reach: `deletes ${describeTargets(targets)} and everything inside, with no trash to restore from` }
+  const risky = [...command.matchAll(RM_RECURSIVE)].map(targetsOfRemoval).filter(targets => !isDisposableRemoval(targets))
+  if (risky.length === 0) return undefined
+  return { label: 'recursive delete', reach: `deletes ${describeTargets(risky.flat())} and everything inside, with no trash to restore from` }
 }
 
 export const assess = (command: string): Danger | undefined => {
