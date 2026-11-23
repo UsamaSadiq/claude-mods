@@ -1,3 +1,5 @@
+import { expand, type Variables, variablesBefore } from './variables'
+
 export type Danger = { label: string; reach: string }
 
 type Rule = { label: string; pattern: RegExp; reach: (match: RegExpMatchArray) => string }
@@ -22,7 +24,12 @@ const RM_RECURSIVE = /\brm\s+(?:-[a-zA-Z]*\s+)*-[a-zA-Z]*[rR][a-zA-Z]*\s+((?:-[a
 
 const unquoted = (target: string): string => target.replace(/^(['"])(.*)\1$/, '$2')
 
-const targetsOf = (argumentText: string): string[] => argumentText.trim().split(/\s+/).filter(Boolean).map(unquoted)
+const targetsOf = (argumentText: string, variables: Variables): string[] =>
+  argumentText
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(target => (target.startsWith("'") ? unquoted(target) : expand(unquoted(target), variables)))
 
 const baseName = (path: string): string => path.replace(/\/+$/, '').split('/').pop() ?? path
 
@@ -86,12 +93,15 @@ const rules: readonly Rule[] = [
   },
 ]
 
-const targetsOfRemoval = (match: RegExpMatchArray): string[] => targetsOf(match[2] ?? '')
+const targetsOfRemoval = (command: string, match: RegExpMatchArray): string[] =>
+  targetsOf(match[2] ?? '', variablesBefore(command, match.index ?? 0))
 
 const isDisposableRemoval = (targets: readonly string[]): boolean => targets.length > 0 && targets.every(isDisposable)
 
 const recursiveRemoval = (command: string): Danger | undefined => {
-  const risky = [...command.matchAll(RM_RECURSIVE)].map(targetsOfRemoval).filter(targets => !isDisposableRemoval(targets))
+  const risky = [...command.matchAll(RM_RECURSIVE)]
+    .map(match => targetsOfRemoval(command, match))
+    .filter(targets => !isDisposableRemoval(targets))
   if (risky.length === 0) return undefined
   return { label: 'recursive delete', reach: `deletes ${describeTargets(risky.flat())} and everything inside, with no trash to restore from` }
 }
