@@ -121,7 +121,7 @@ Puts a confirmation in front of Bash commands that are hard to undo, with one li
 cross-fire held a force push: it rewrites the remote branch history for everyone who pulled it.
 ```
 
-Held: recursive `rm` (except disposable directories such as `node_modules`, `dist`, `.venv`, and paths inside temp roots such as `/tmp`, including a `$D` set to one in plain assignments that lead the command), `git push --force` / `-f` (not `--force-with-lease`), `git reset --hard`, `git clean -f`, `git branch -D`, `git checkout -- .`, `DROP` / `TRUNCATE`, migrations, `dd of=`, `mkfs` and recursive `chmod` / `chown`.
+Held: recursive `rm` (except disposable directories such as `node_modules`, `dist`, `.venv`, and paths inside temp roots such as `/tmp`, including a `$D` set to one in plain assignments that lead the command), `git push --force` / `-f` (not `--force-with-lease`), `git reset --hard`, `git clean -f`, `git branch -D`, `git checkout -- .`, `DROP` / `TRUNCATE`, `dd of=`, `mkfs` and recursive `chmod` / `chown`.
 
 It answers `ask` at `tool.check`, so the usual permission dialog appears. Modes that decide asks without you (`bypassPermissions`, and `auto`, where a classifier answers) may let a held command through without the question reaching you; a mod cannot read the mode to tell.
 

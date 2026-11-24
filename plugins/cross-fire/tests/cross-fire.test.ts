@@ -208,10 +208,10 @@ describe('danger', () => {
     expect(labelOf('git status')).toBeUndefined()
   })
 
-  test('holds destructive SQL and migrations', () => {
+  test('holds destructive SQL but lets migrations through', () => {
     expect(labelOf('psql -c "DROP TABLE users"')).toBe('SQL drop')
-    expect(labelOf('python manage.py migrate')).toBe('migration')
-    expect(labelOf('alembic downgrade -1')).toBe('migration')
+    expect(labelOf('python manage.py migrate')).toBeUndefined()
+    expect(labelOf('alembic downgrade -1')).toBeUndefined()
     expect(labelOf('ls -la')).toBeUndefined()
   })
 

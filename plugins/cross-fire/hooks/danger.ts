@@ -77,11 +77,6 @@ const rules: readonly Rule[] = [
     reach: () => 'removes tables or their rows permanently',
   },
   {
-    label: 'migration',
-    pattern: /\b(?:migrate(?!\s+--plan)|alembic\s+(?:upgrade|downgrade)|prisma\s+migrate\s+(?:deploy|reset)|db:migrate|db:reset)\b/,
-    reach: () => 'changes the database schema, which may not be reversible',
-  },
-  {
     label: 'raw disk write',
     pattern: /\b(?:dd\s+[^;&|\n]*\bof=|mkfs(?:\.\w+)?\s)/,
     reach: () => 'overwrites a device or filesystem',
