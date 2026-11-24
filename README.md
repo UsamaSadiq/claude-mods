@@ -14,6 +14,7 @@ Small, fun and useful mods for [Claude Code](https://claude.com/claude-code). Ea
 | [session-resume](#session-resume) | Sends "continue" when a rate-limit window resets after a limit stopped your turn |
 | [erp-log-nudge](#erp-log-nudge) | Reminds you late on weekdays to log ERP time when today is still empty |
 | [render-md](#render-md) | Renders Markdown files Claude edits in a side pane |
+| [urdu-reader](#urdu-reader) | Opens Urdu from Claude's replies in your browser, joined and right-to-left |
 
 ## Install
 
@@ -27,7 +28,7 @@ Type this at the prompt of a Claude Code terminal session:
 /plugin install usage-band --marketplace UsamaSadiq/claude-mods
 ```
 
-The other mods install the same way: `ringtones`, `cross-fire`, `security-guard`, `session-resume`, `erp-log-nudge` and `render-md`.
+The other mods install the same way: `ringtones`, `cross-fire`, `security-guard`, `session-resume`, `erp-log-nudge`, `render-md` and `urdu-reader`.
 
 The first install asks to add the `UsamaSadiq/claude-mods` marketplace (answer `y`) and which scope to install into. The mod is active right away, with no restart.
 
@@ -179,6 +180,12 @@ When Claude writes or edits a `.md`, `.markdown` or `.mdx` file, a pane renders 
 | `autoOpen` | `true` | Open the pane by itself on an edit |
 
 A pane opened by an edit needs a terminal at least 144 columns wide, and below that it waits undrawn until you run `/render-md`. In fullscreen it docks beside the transcript; on the main screen it opens inline above the prompt. Set `autoOpen` to `false` to only open it yourself.
+
+## urdu-reader
+
+Terminals can't join Urdu letters or lay text right-to-left, so Urdu in Claude's replies comes out broken. When a reply contains Urdu, the status line says so, and `/urdu` opens that reply in your browser: Urdu paragraphs set right-to-left in Nastaliq, English left-to-right, in your light or dark theme. `/urdu <text>` shows any text you pass instead.
+
+The page is written to `/tmp/claude-urdu-reader/last.html`. Nothing is sent anywhere except the font request to Google Fonts.
 
 ## Using them together
 

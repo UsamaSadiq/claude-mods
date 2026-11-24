@@ -47,6 +47,11 @@
       "name": "render-md",
       "source": "./plugins/render-md",
       "description": "Renders the Markdown files Claude edits in a side pane, plus /render-md <file>"
+    },
+    {
+      "name": "urdu-reader",
+      "source": "./plugins/urdu-reader",
+      "description": "Opens Urdu from Claude's replies in your browser, joined and right-to-left, with /urdu"
     }
   ]
 }

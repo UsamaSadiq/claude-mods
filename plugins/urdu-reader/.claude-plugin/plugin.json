@@ -1,0 +1,10 @@
+{
+  "name": "urdu-reader",
+  "version": "1.0.0",
+  "description": "Opens Urdu from Claude's replies in your browser, joined and right-to-left, with /urdu",
+  "author": { "name": "Usama Sadiq", "url": "https://github.com/UsamaSadiq" },
+  "homepage": "https://github.com/UsamaSadiq/claude-mods",
+  "repository": "https://github.com/UsamaSadiq/claude-mods",
+  "license": "MIT",
+  "keywords": ["urdu", "rtl", "nastaliq", "reader"]
+}
